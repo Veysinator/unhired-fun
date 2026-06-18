@@ -38,6 +38,41 @@ const initialInput: ScoreInput = {
 const originOptions = Object.entries(originLabels) as [SearchOrigin, string][];
 const goalOptions = Object.entries(goalLabels) as [SearchGoal, string][];
 
+const numericRules: Record<
+  number,
+  Array<{ name: keyof ScoreInput; label: string; max: number }>
+> = {
+  0: [{ name: "days", label: "Days actively searching", max: 3650 }],
+  1: [
+    { name: "applications", label: "Applications sent", max: 10000 },
+    { name: "ghosted", label: "Ghosted", max: 10000 },
+    { name: "autoRejected", label: "Automatic rejections", max: 10000 },
+    { name: "humanRejected", label: "Human rejections", max: 10000 },
+  ],
+  2: [
+    { name: "recruiterScreens", label: "Recruiter screens", max: 10000 },
+    {
+      name: "technicalStages",
+      label: "Technical / skills stages",
+      max: 10000,
+    },
+    { name: "finalRounds", label: "Final rounds", max: 10000 },
+    { name: "unpaidAssignments", label: "Unpaid assignments", max: 10000 },
+    {
+      name: "finalRoundGhosts",
+      label: "Ghosted after a final round",
+      max: 10000,
+    },
+  ],
+  3: [
+    {
+      name: "experienceYears",
+      label: "Years of relevant experience",
+      max: 50,
+    },
+  ],
+};
+
 function NumberField({
   label,
   name,
@@ -64,13 +99,7 @@ function NumberField({
         max={max}
         step="1"
         value={value}
-        onChange={(event) => {
-          const nextValue = Number(event.target.value || 0);
-          onChange(
-            name,
-            Math.min(max, Math.max(0, Math.trunc(nextValue))),
-          );
-        }}
+        onChange={(event) => onChange(name, Number(event.target.value || 0))}
       />
     </label>
   );
@@ -97,7 +126,32 @@ export default function Home() {
     setInput((current) => ({ ...current, [name]: value }));
   }
 
+  function numericErrorForStep(targetStep: number) {
+    for (const rule of numericRules[targetStep] || []) {
+      const value = input[rule.name];
+
+      if (
+        typeof value !== "number" ||
+        !Number.isFinite(value) ||
+        !Number.isInteger(value) ||
+        value < 0 ||
+        value > rule.max
+      ) {
+        return `${rule.label} must be a whole number between 0 and ${rule.max.toLocaleString()}.`;
+      }
+    }
+
+    return "";
+  }
+
   function continueQuiz() {
+    const numericError = numericErrorForStep(step);
+
+    if (numericError) {
+      setValidationError(numericError);
+      return;
+    }
+
     if (step === 1 && input.applications !== applicationOutcomeTotal) {
       setValidationError(
         `Applications sent must equal the accounted outcomes: ${input.ghosted} ghosted + ${input.autoRejected} automatic + ${input.humanRejected} human rejections = ${applicationOutcomeTotal}.`,
@@ -111,6 +165,16 @@ export default function Home() {
 
   function submit(event: FormEvent) {
     event.preventDefault();
+
+    for (const targetStep of [0, 1, 2, 3]) {
+      const numericError = numericErrorForStep(targetStep);
+
+      if (numericError) {
+        setValidationError(numericError);
+        setStep(targetStep);
+        return;
+      }
+    }
 
     if (input.applications !== applicationOutcomeTotal) {
       setValidationError(

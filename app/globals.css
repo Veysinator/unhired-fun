@@ -464,6 +464,12 @@ select:focus {
   box-shadow: 4px 4px 0 var(--orange);
 }
 
+input[type="number"]:invalid {
+  border-color: var(--orange);
+  background: #fff3ef;
+  box-shadow: 4px 4px 0 var(--orange);
+}
+
 .number-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
