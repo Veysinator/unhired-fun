@@ -166,6 +166,14 @@ export default function Home() {
   function submit(event: FormEvent) {
     event.preventDefault();
 
+    if (!input.nickname.trim()) {
+      setValidationError(
+        "Choose a nickname before revealing your rank. History needs something to barely remember.",
+      );
+      setStep(4);
+      return;
+    }
+
     for (const targetStep of [0, 1, 2, 3]) {
       const numericError = numericErrorForStep(targetStep);
 
@@ -376,6 +384,7 @@ export default function Home() {
           <span>Nickname</span>
           <input
             type="text"
+            required
             maxLength={24}
             placeholder="Anonymous Applicant"
             value={input.nickname}
@@ -592,6 +601,7 @@ export default function Home() {
               </button>
               {step < steps.length - 1 ? (
                 <button
+                  key="continue"
                   type="button"
                   className="primary-button"
                   onClick={continueQuiz}
@@ -599,7 +609,11 @@ export default function Home() {
                   Continue →
                 </button>
               ) : (
-                <button type="submit" className="primary-button">
+                <button
+                  key="reveal"
+                  type="submit"
+                  className="primary-button"
+                >
                   Reveal my rank ↗
                 </button>
               )}
